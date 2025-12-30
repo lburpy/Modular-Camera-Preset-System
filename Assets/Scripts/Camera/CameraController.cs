@@ -21,27 +21,56 @@ public class CameraController : MonoBehaviour
     private bool isMoving;                  // Kamera hareket halinde mi?
     private Camera cam;                     // Main Camera
     private CameraInputActions controls;    // Input system
+    private bool isInitialized;
 
     private void Awake()
     {
-        // Kamera referansı
         cam = Camera.main;
 
-        // Input sistemi oluşturmak için
+        if (cam == null)
+        {
+            Debug.LogError($"{nameof(CameraController)}: Main Camera bulunamadı. Bileşen devre dışı bırakılıyor.");
+            enabled = false;
+            return;
+        }
+
+        if (presets == null || presets.Count == 0)
+        {
+            Debug.LogError($"{nameof(CameraController)}: En az bir kamera preseti gerekli.");
+            enabled = false;
+            return;
+        }
+
+        if (startPresetIndex < 0 || startPresetIndex >= presets.Count)
+        {
+            Debug.LogError($"{nameof(CameraController)}: Başlangıç preset indexi ({startPresetIndex}) geçersiz. 0'a ayarlanıyor.");
+            startPresetIndex = 0;
+        }
+
         controls = new CameraInputActions();
         controls.Camera.Move.performed += OnMove;
-        controls.Enable();
 
         // Başlangıç preseti ayarlanır
         currentIndex = startPresetIndex;
+        ApplyPreset(currentIndex);
+        isInitialized = true;
+    }
 
-        cam.transform.position = presets[currentIndex].position;
-        cam.transform.rotation = Quaternion.Euler(presets[currentIndex].rotation);
+    private void OnEnable()
+    {
+        controls?.Enable();
+    }
 
+    private void OnDisable()
+    {
+        controls?.Disable();
     }
 
     private void OnMove(InputAction.CallbackContext ctx)
     {
+        if (!isInitialized)
+            return;
+
         // Kamera inputu ve hareketi kontrol ediliyor
         if (!ctx.performed || isMoving) return;
 
@@ -69,6 +98,18 @@ public class CameraController : MonoBehaviour
 
         StopAllCoroutines();
         StartCoroutine(MoveCamera(targetIndex));
+    }
+
+    private void ApplyPreset(int index)
+    {
+        if (index < 0 || index >= presets.Count)
+        {
+            Debug.LogError($"{nameof(CameraController)}: Preset indexi ({index}) geçersiz.");
+            return;
+        }
+
+        cam.transform.position = presets[index].position;
+        cam.transform.rotation = Quaternion.Euler(presets[index].rotation);
     }
 
     // Kamerayı burada taşıyoruz
