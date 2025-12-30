@@ -6,15 +6,15 @@ using System;
 
 public class CameraController : MonoBehaviour
 {
-    [Header("Preset Ayarları")]
-    [Tooltip("Kameranın kullanacağı tüm presetler")]
+    [Header("Preset AyarlarÄ±")]
+    [Tooltip("KameranÄ±n kullanacaÄŸÄ± tÃ¼m presetler")]
     public List<CameraPresetData> presets;
 
-    [Tooltip("Oyuna başlanacak preset indexi")]
+    [Tooltip("Oyuna baÅŸlanacak preset indexi")]
     public int startPresetIndex = 0;
 
-    [Header("Geçiş Ayarları")]
-    public float moveDuration = 0.3f;       // Kamera geçiş süresi
+    [Header("GeÃ§iÅŸ AyarlarÄ±")]
+    public float moveDuration = 0.3f;       // Kamera geÃ§iÅŸ sÃ¼resi
     public AnimationCurve moveCurve;        // Easing curve
 
     private int currentIndex;               // Aktif preset index
@@ -24,15 +24,15 @@ public class CameraController : MonoBehaviour
 
     private void Awake()
     {
-        // Kamera referansı
+        // Kamera referansÄ±
         cam = Camera.main;
 
-        // Input sistemi oluşturmak için
+        // Input sistemi oluÅŸturmak iÃ§in
         controls = new CameraInputActions();
         controls.Camera.Move.performed += OnMove;
         controls.Enable();
 
-        // Başlangıç preseti ayarlanır
+        // BaÅŸlangÄ±Ã§ preseti ayarlanÄ±r
         currentIndex = startPresetIndex;
 
         cam.transform.position = presets[currentIndex].position;
@@ -60,10 +60,10 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    // Hedef presete geçişi kontrol eder
+    // Hedef presete geÃ§iÅŸi kontrol eder
     private void TryMove(int targetIndex)
     {
-        // -1 ya da geçersiz indexi sınır olarak alır
+        // -1 ya da geÃ§ersiz indexi sÄ±nÄ±r olarak alÄ±r
         if (targetIndex < 0 || targetIndex >= presets.Count)
             return;
 
@@ -71,7 +71,7 @@ public class CameraController : MonoBehaviour
         StartCoroutine(MoveCamera(targetIndex));
     }
 
-    // Kamerayı burada taşıyoruz
+    // KamerayÄ± burada taÅŸÄ±yoruz
     private IEnumerator MoveCamera(int targetIndex)
     {
         isMoving = true;
@@ -86,14 +86,17 @@ public class CameraController : MonoBehaviour
 
         while (t < 1f)
         {
-            t += Time.deltaTime / moveDuration;
+            t = Mathf.Clamp01(t + Time.deltaTime / moveDuration);
             float eased = moveCurve.Evaluate(t);
 
             cam.transform.position = Vector3.Lerp(startPos, endPos, eased);
-            cam.transform.rotation = Quaternion.Slerp(startRot, endRot, t);
+            cam.transform.rotation = Quaternion.Slerp(startRot, endRot, eased);
 
             yield return null;
         }
+
+        cam.transform.position = endPos;
+        cam.transform.rotation = endRot;
 
         currentIndex = targetIndex;
         isMoving = false;
